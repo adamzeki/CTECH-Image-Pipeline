@@ -2,27 +2,59 @@ import json
 import gc
 import cv2
 import torch
+import json
 from pathlib import Path
 from ultralytics import YOLO
 from vllm import LLM, SamplingParams
 from tqdm import tqdm
 
-# --- Config ---
-YOLO_MODEL_PATH = 'yolo26n.pt'
-LLM_MODEL_PATH = "google/gemma-3-4b-it"
+# --- Setting config ---
+DEFAULT_CONFIG = {
+    "YOLO_MODEL_PATH": 'yolo26n.pt',
+    "LLM_MODEL_PATH": "google/gemma-3-4b-it",
+    "DETECTED_CLASSES": ["person", "car", "bus", "motorcycle", "bicycle"],
+    "TARGET_RESOLUTION": [640, 640],
+    "ENABLE_PREPROCESSING": True,
+    "PROCESSED_DIR_NAME": "processed",
+    "INPUT_DIR": "../inputs/input_images",
+    "OUTPUT_DIR": "./outputs/pipeline_results",
+}
 
-DETECTED_CLASSES = ["person", "car", "bus", "motorcycle", "bicycle"]  
-INPUT_DIR = Path("../inputs/input_images")
-OUTPUT_DIR = Path("./outputs/pipeline_results")
+CONFIG_FILE = Path("config.json")
+
+def load_config(config_path: Path):
+    config = DEFAULT_CONFIG.copy()
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                external_config = json.load(f)
+                config.update(external_config)
+                print(f"Załadowano konfigurację z pliku: {config_path}")
+        except Exception as e:
+            print(f"Błąd podczas wczytywania pliku konfiguracyjnego: {e}. Używam domyślnych.")
+    else:
+        print("Plik konfiguracyjny nie istnieje. Używam ustawień domyślnych.")
+    return config
+
+config=load_config(CONFIG_FILE)
+
+# --- Config ---
+YOLO_MODEL_PATH = config["YOLO_MODEL_PATH"]
+LLM_MODEL_PATH = config["LLM_MODEL_PATH"]
+
+DETECTED_CLASSES = config["DETECTED_CLASSES"]  
+INPUT_DIR = Path(config["INPUT_DIR"])
+OUTPUT_DIR = Path(config["OUTPUT_DIR"])
 
 # --- Preprocessing config ---
-TARGET_RESOLUTION = (640, 640)
-ENABLE_PREPROCESSING = True
-PROCESSED_DIR_NAME = "processed"   
+TARGET_RESOLUTION = tuple(config["TARGET_RESOLUTION"])
+ENABLE_PREPROCESSING = config["ENABLE_PREPROCESSING"]
+PROCESSED_DIR_NAME =  config["PROCESSED_DIR_NAME"]
 PROCESSED_DIR = INPUT_DIR / PROCESSED_DIR_NAME
 
 # Global sampling params for vLLM
 sampling_params = SamplingParams(temperature=0.01, max_tokens=1024)
+
 
 def clear_vram():
     """Forces Python and PyTorch to release all unassigned GPU memory."""

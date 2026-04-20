@@ -1,0 +1,10 @@
+{
+    "YOLO_MODEL_PATH": "yolo26n.pt",
+    "LLM_MODEL_PATH": "google/gemma-3-4b-it",
+    "DETECTED_CLASSES": ["person", "car", "bus", "motorcycle", "bicycle"],
+    "TARGET_RESOLUTION": [640, 640],
+    "ENABLE_PREPROCESSING": true,
+    "PROCESSED_DIR_NAME": "processed",
+    "INPUT_DIR": "../inputs/input_images",
+    "OUTPUT_DIR": "./outputs/pipeline_results"
+}
